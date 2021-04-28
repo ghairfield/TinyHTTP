@@ -1,0 +1,87 @@
+\documentclass[12pt,letterpaper]{extarticle}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{amssymb}
+\usepackage{graphicx}
+\usepackage{color}
+\usepackage{mwe} % Graphics placeholder
+\usepackage[colorlinks=true,linkcolor=red,citecolor=blue]{hyperref}
+\usepackage{float}
+\usepackage{listings}
+\usepackage{setspace}
+
+\definecolor{mygreen}{rgb}{0,0.6,0}
+\definecolor{mygray}{rgb}{0.5,0.5,0.5}
+
+\interfootnotelinepenalty=10000
+
+\lstset{
+	basicstyle=\ttfamily,
+	keywordstyle=\color{blue}\ttfamily,
+	stringstyle=\color{red}\ttfamily,
+	commentstyle=\color{mygreen},
+	captionpos=b,
+	numbers=left,
+	numberstyle=\tiny\color{mygray},
+	showspaces=false,
+	showstringspaces=false,
+	showtabs=false,
+  columns=fixed
+}
+\lstMakeShortInline[columns=fixed]| % This allows for |code| 
+\graphicspath{{./images/}{IR}}
+\usepackage[left=2.0cm, top=2.0cm]{geometry}
+
+\title{CS410P Proposal}
+\author{Greg Hairfield}
+\date{April 27, 2021}
+
+\doublespacing
+\begin{document}
+
+\maketitle
+
+I plan on creating a HTTP/1.0 server for this project. The current HTTP/1.0
+\href{https://www.ietf.org/rfc/rfc1945.txt}{specification} is well documented
+and available to anyone. Ideally the server will validate a HTTP request and 
+formulate a valid response. The response will only serve static resources
+(e.g. HTML page, text document). I plan on using two Rust crates:
+\href{https://clap.rs/}{Clap} to help with command line parsing and 
+\href{https://docs.rs/toml/0.5.8/toml/}{TOML} to parse configuration files.
+
+Features of HTTP/1.0 I plan on implementing:
+
+\begin{center}
+  \begin{tabular}{ll}
+    \hline
+    Feature & Feature \\
+    \hline\hline
+    HTTP Version & Uniform Resource Identifiers \\
+    \hline
+    Date/Time Formats & Media Types \\
+    \hline
+    HTTP Message & Request \\
+    \hline
+    Response & Method Definitions \\
+    \hline
+    Status Codes & Header Fields \\
+    \hline
+  \end{tabular}
+\end{center}
+
+As above noted, I do \emph{not} plan on implementing additional features such
+as HTTPS, streaming, proxy,
+gateway, tunnel or caching for this project.
+
+Project information:
+
+\begin{center}
+  \begin{tabular}{rl}
+    Name: & Greg Hairfield \\
+    Email: & hairfiel@pdx.edu \\
+    Project Name: & Tiny HTTP \\
+    Git URL: & https://github.com/ghairfield/TinyHTTP \\
+  \end{tabular}
+\end{center}
+
+\end{document}

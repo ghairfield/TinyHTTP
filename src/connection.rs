@@ -2,6 +2,8 @@ use std::net::{ TcpListener, TcpStream, Shutdown };
 use std::io::{ Read, Write };
 use std::thread;
 
+use crate::request::Header;
+
 pub fn listen() -> () {
     let listen = TcpListener::bind("127.0.0.1:8080").unwrap();
     // TODO
@@ -26,10 +28,12 @@ pub fn listen() -> () {
 fn new_connection(mut conn: TcpStream) -> () {
     println!("New connection from {}", conn.peer_addr().unwrap());
 
-    let mut data = Vec::new();
+    let mut buf = [0 as u8; 1024];
 
     while match conn.read(&mut buf) {
         Ok(size) => {
+            let header = Header::new(&buf).unwrap();
+            header.print();
             true
         }
         Err(e) => {

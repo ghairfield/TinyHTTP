@@ -4,7 +4,8 @@ CS410P Spring 2021 Tiny Rust HTTP/1.0 Server in Rust
 
 # Description
 
-
+This is a [HTTP/1.0](https://www.ietf.org/rfc/rfc1945.txt) server written in
+Rust. 
 
 # Usage
 

@@ -4,25 +4,26 @@ CS410P Spring 2021 Tiny Rust HTTP/1.0 Server in Rust
 
 # Description
 
-This is a [HTTP/1.0](https://www.ietf.org/rfc/rfc1945.txt) server written in
-Rust. 
+A [HTTP/1.0](https://www.ietf.org/rfc/rfc1945.txt) server written in
+Rust. There is some thought to make it a HTTP/1.1 server, but we shall
+see by the end of the quarter.
 
 # Usage
 
 # Implemented
 
-- [ ] Accept a connection
+- [X] Accept a connection
 - [ ] Respond to a request
 - [ ] Close the connection
-- [ ] Method Definitions
-  - [ ] GET
-  - [ ] HEAD
-  - [ ] POST
+- [X] Method Definitions
+  - [X] GET
+  - [X] HEAD
+  - [X] POST
 - [ ] Additional Request Methods
-  - [ ] PUT
-  - [ ] DELETE
-  - [ ] LINK
-  - [ ] UNLINK
+  - [X] PUT
+  - [X] DELETE
+  - [X] LINK
+  - [X] UNLINK
 - [ ] Status Codes
   - [ ] Informational 1xx
   - [ ] Successful 2xx

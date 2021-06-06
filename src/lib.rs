@@ -4,6 +4,10 @@
 //! CS410P Rust Programming
 //! Spring 2021
 
+mod request;
+mod response;
+mod protocol;
+
 use std::net::{ TcpListener, TcpStream, Shutdown };
 use std::io::{ Read, Write };
 use std::thread;

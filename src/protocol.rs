@@ -119,10 +119,11 @@ pub enum StatusCode {
     NotImplemented = 501,
     BadGateway = 502,
     ServiceUnavailable = 503,
+    Unknown
 }
 
 /// Get the string representation of a request type.
-pub fn method_to_string(r: RequestMethod) -> String {
+pub fn method_to_string(r: &RequestMethod) -> String {
     let ret;
 
     match r {
@@ -139,8 +140,33 @@ pub fn method_to_string(r: RequestMethod) -> String {
     ret
 }
 
+pub fn status_to_string(s: &StatusCode) -> String {
+    match s {
+        StatusCode::OK => "200 OK".to_string(),
+        StatusCode::Created => "201 Created".to_string(),
+        _ => "Unknown".to_string(),
+    }
+    /*
+    Accepted = 202,
+    NoContent = 204,
+    MovedPermanently = 301,
+    MovedTemporarily = 302,
+    NotModified = 304,
+    BadRequest = 400,
+    Unauthorized = 401,
+    Forbidden = 403,
+    NotFound = 404,
+    InternalServerError = 500,
+    NotImplemented = 501,
+    BadGateway = 502,
+    ServiceUnavailable = 503,
+    Unknown
+    }
+    */
+}
+
 /// Get the string representation of a HTTP version
-pub fn version_to_string(r: RequestVersion) -> String {
+pub fn version_to_string(r: &RequestVersion) -> String {
     let ret;
 
     match r {
@@ -154,7 +180,7 @@ pub fn version_to_string(r: RequestVersion) -> String {
 }
 
 /// Get the HTTP field type as a string
-pub fn field_to_string(r: RequestField) -> String {
+pub fn field_to_string(r: &RequestField) -> String {
     let ret;
 
     match r {

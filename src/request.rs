@@ -124,21 +124,25 @@ impl Header {
     /// Print the contents of the header field
     /// in plain text to stdout. Used for development
     pub fn print(&self) {
-        let method = protocol::method_to_string(self.method);
-        let version = protocol::version_to_string(self.version);
+        let method = protocol::method_to_string(&self.method);
+        let version = protocol::version_to_string(&self.version);
 
         println!("Request Line: {}, Path: {}, Version {}",
             method, self.path, version);
 
         println!("---- Known Fields ----");
         for (key, value) in &self.fields {
-            let k = protocol::field_to_string(*key);
+            let k = protocol::field_to_string(key);
             println!("Field: {} -- Value: {}", k, value);
         }
         println!("---- Unknown Fields ----");
         for (key, value) in &self.unknown_fields {
             println!("Field: {} -- Value: {}", key, value);
         }
+    }
+
+    pub fn is_valid(&self) -> bool {
+        self.valid
     }
 
     // According to RFC1945 any unrecognized header fields are to 

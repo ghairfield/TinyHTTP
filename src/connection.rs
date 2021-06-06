@@ -1,17 +1,15 @@
+//! Todo Move this to lib.rs
 //!
-//!
-//!
-//!
-//!
-//!
-//!
-//!
+//! Greg Hairfield
+//! CS410P Rust Programming
+//! Spring 2021
 
 use std::net::{ TcpListener, TcpStream, Shutdown };
 use std::io::{ Read, Write };
 use std::thread;
 
 use crate::request::Header;
+use crate::response::Response;
 
 pub fn listen() -> () {
     let listen = TcpListener::bind("127.0.0.1:8080").unwrap();
@@ -38,20 +36,24 @@ fn new_connection(mut conn: TcpStream) -> () {
     println!("New connection from {}", conn.peer_addr().unwrap());
 
     let mut buf = [0 as u8; 1024];
+    let result = conn.read(&mut buf);
 
-    while match conn.read(&mut buf) {
+    match result {
         Ok(size) => {
             let header = Header::new(&buf).unwrap();
+            let mut res = Response::new();
+            res.create_response(&header);
+            let r = res.to_network();
+            conn.write(r.as_bytes()).unwrap();
+            conn.flush().unwrap();
             header.print();
-            true
         }
         Err(e) => {
             println!("An error occured while reading the stream! ip: {}, err: {}",
                 conn.peer_addr().unwrap(), e);
             conn.shutdown(Shutdown::Both).unwrap();
-            false
         }
-    }{}
+    };
 }
 
 

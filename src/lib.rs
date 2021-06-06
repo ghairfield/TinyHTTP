@@ -43,10 +43,10 @@ fn new_connection(mut conn: TcpStream) -> () {
     let result = conn.read(&mut buf);
 
     match result {
-        Ok(size) => {
+        Ok(_size) => { // TODO Who knows if we are going to need size yet??
             let header = Header::new(&buf).unwrap();
             let mut res = Response::new();
-            res.create_response(&header);
+            res.create_response(&header).unwrap();
             let r = res.to_network();
             conn.write(r.as_bytes()).unwrap();
             conn.flush().unwrap();

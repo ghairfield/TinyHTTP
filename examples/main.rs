@@ -4,8 +4,8 @@
 //! CS410P Rust Programming
 //! Spring 2021
 
-use TinyHTTP;
+use tiny_http;
 
 fn main() {
-    TinyHTTP::listen();
+    tiny_http::listen();
 }

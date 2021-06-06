@@ -4,8 +4,6 @@
 //! CS410P Rust Programming
 //! Spring 2021
 
-use std::collections::HashMap;
-
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum RequestMethod {
     // HTTP/1.0 methods
@@ -103,6 +101,7 @@ pub enum RequestField {
 }
 
 /// Response codes for HTML/1.0
+#[allow(dead_code)]
 pub enum StatusCode {
     OK = 200,
     Created = 201,
@@ -124,84 +123,68 @@ pub enum StatusCode {
 
 /// Get the string representation of a request type.
 pub fn method_to_string(r: &RequestMethod) -> String {
-    let ret;
-
     match r {
-        RequestMethod::Get => ret = "GET".to_string(), 
-        RequestMethod::Head => ret = "HEAD".to_string(), 
-        RequestMethod::Post => ret = "POST".to_string(), 
-        RequestMethod::Put => ret = "PUT".to_string(),
-        RequestMethod::Link => ret = "LINK".to_string(),
-        RequestMethod::Unlink => ret = "UNLINK".to_string(),
-        RequestMethod::Delete => ret = "DELETE".to_string(),
-        RequestMethod::Unknown => ret = "Unknown".to_string(),
+        RequestMethod::Get => "GET".to_string(), 
+        RequestMethod::Head => "HEAD".to_string(), 
+        RequestMethod::Post => "POST".to_string(), 
+        RequestMethod::Put => "PUT".to_string(),
+        RequestMethod::Link => "LINK".to_string(),
+        RequestMethod::Unlink => "UNLINK".to_string(),
+        RequestMethod::Delete => "DELETE".to_string(),
+        RequestMethod::Unknown => "Unknown".to_string(),
     }
-
-    ret
 }
 
 pub fn status_to_string(s: &StatusCode) -> String {
     match s {
         StatusCode::OK => "200 OK".to_string(),
         StatusCode::Created => "201 Created".to_string(),
+        StatusCode::Accepted => "202 Accepted".to_string(),
+        StatusCode::NoContent => "204 No Content".to_string(),
+        StatusCode::MovedPermanently => "301 Moved Permanently".to_string(),
+        StatusCode::MovedTemporarily => "202 Moved Temporarily".to_string(),
+        StatusCode::NotModified => "304 Not Modified".to_string(),
+        StatusCode::BadRequest => "400 Bad Request".to_string(),
+        StatusCode::Unauthorized => "401 Unauthorized".to_string(),
+        StatusCode::Forbidden => "403 Forbidden".to_string(),
+        StatusCode::NotFound => "404 Not Found".to_string(),
+        StatusCode::InternalServerError => "500 Internal Server Error".to_string(),
+        StatusCode::NotImplemented => "501 Not Implemented".to_string(),
+        StatusCode::BadGateway => "502 Bad Gateway".to_string(),
+        StatusCode::ServiceUnavailable => "503 Service Unavailable".to_string(),
         _ => "Unknown".to_string(),
     }
-    /*
-    Accepted = 202,
-    NoContent = 204,
-    MovedPermanently = 301,
-    MovedTemporarily = 302,
-    NotModified = 304,
-    BadRequest = 400,
-    Unauthorized = 401,
-    Forbidden = 403,
-    NotFound = 404,
-    InternalServerError = 500,
-    NotImplemented = 501,
-    BadGateway = 502,
-    ServiceUnavailable = 503,
-    Unknown
-    }
-    */
 }
 
 /// Get the string representation of a HTTP version
 pub fn version_to_string(r: &RequestVersion) -> String {
-    let ret;
-
     match r {
-        RequestVersion::SimpleRequest => ret = "Simple Request".to_string(),
-        RequestVersion::HTTP1 => ret = "HTTP/1.0".to_string(),
-        RequestVersion::HTTP11 => ret = "HTTP/1.1".to_string(),
-        RequestVersion::Unknown => ret = "Unknown".to_string(),
+        RequestVersion::SimpleRequest => "Simple Request".to_string(),
+        RequestVersion::HTTP1 => "HTTP/1.0".to_string(),
+        RequestVersion::HTTP11 => "HTTP/1.1".to_string(),
+        RequestVersion::Unknown => "Unknown".to_string(),
     }
-
-    ret
 }
 
 /// Get the HTTP field type as a string
 pub fn field_to_string(r: &RequestField) -> String {
-    let ret;
-
     match r {
-        RequestField::Allow => ret = "Allow".to_string(),
-        RequestField::Authorization => ret = "Authorization".to_string(),
-        RequestField::ContentEncoding => ret = "Content-Encoding".to_string(),
-        RequestField::ContentLength => ret = "Content-Length".to_string(),
-        RequestField::ContentType => ret = "Content-Type".to_string(),
-        RequestField::Date => ret = "Date".to_string(),
-        RequestField::Expires => ret = "Expires".to_string(),
-        RequestField::FromField => ret = "From".to_string(),
-        RequestField::IfModifiedSince => ret = "If-Modified-Since".to_string(),
-        RequestField::LastModified => ret = "Last-Modified".to_string(),
-        RequestField::Location => ret = "Location".to_string(),
-        RequestField::Pragma => ret = "Pragma".to_string(),
-        RequestField::Referer => ret = "Refer".to_string(),
-        RequestField::Server => ret = "Server".to_string(),
-        RequestField::UserAgent => ret = "User-Agent".to_string(),
-        RequestField::WwwAuthenticate => ret = "WWW-Authenticate".to_string(),
-        RequestField::Unknown => ret = "Unknown".to_string(),
+        RequestField::Allow => "Allow".to_string(),
+        RequestField::Authorization => "Authorization".to_string(),
+        RequestField::ContentEncoding => "Content-Encoding".to_string(),
+        RequestField::ContentLength => "Content-Length".to_string(),
+        RequestField::ContentType => "Content-Type".to_string(),
+        RequestField::Date => "Date".to_string(),
+        RequestField::Expires => "Expires".to_string(),
+        RequestField::FromField => "From".to_string(),
+        RequestField::IfModifiedSince => "If-Modified-Since".to_string(),
+        RequestField::LastModified => "Last-Modified".to_string(),
+        RequestField::Location => "Location".to_string(),
+        RequestField::Pragma => "Pragma".to_string(),
+        RequestField::Referer => "Refer".to_string(),
+        RequestField::Server => "Server".to_string(),
+        RequestField::UserAgent => "User-Agent".to_string(),
+        RequestField::WwwAuthenticate => "WWW-Authenticate".to_string(),
+        RequestField::Unknown => "Unknown".to_string(),
     }
-
-    ret
 }

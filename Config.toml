@@ -14,6 +14,14 @@ port = 8080
 # premissions correctly.
 doc_root = 'http'
 
+# Types of images the server will serve. If the image is not
+# on this list, then the server will ignore it.
+image_list = ['ico', 'jpeg', 'jpg', 'gif', 'png']
+
+# Types of files the server will serve. If a file extension
+# is not on this list, the server will ignore it.
+file_list = ['html', 'htm', 'css', 'js', 'txt']
+
 ###################################################
 ## These are not required, but should be reviwed ##
 ###################################################
@@ -24,13 +32,13 @@ max_buffer = 2048
 # If the root file is not specified then `index.html` is assumed.
 # Not setting this and not haveing an `index.html` would make any
 # root request return 404 Not Found.
-root_file = "index.html"
+root_file = 'index.html'
 
 # The default root file. If `root_file` is not specified this is
 # the fallback. If nothing is specified here, then `index.html`
 # is the assumption.
-#default_root_file =
+#default_root_file = 'index.html'
 
 # If a client requests a resource that can not be found, this is
 # the page returned.
-#custom_404 = 
+#custom_404 = 'my_custom_404.html'

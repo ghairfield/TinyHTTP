@@ -1,9 +1,13 @@
-//! HTTP Protocals
+//! HTTP Protocols
 //!
 //! Greg Hairfield
 //! CS410P Rust Programming
 //! Spring 2021
 
+/// HTTP request method. 
+///     Get: Standard request, supply the resource requested
+///     Head: Same as GET but do not send content
+///     Post: Client is responding with information
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum RequestMethod {
     // HTTP/1.0 methods

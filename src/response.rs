@@ -11,10 +11,13 @@
 
 use std::fs::File;
 use std::io::prelude::*;
+use std::path::Path;
+use std::ffi::OsStr;
 
 use std::collections::HashMap;
 use crate::protocol::*;
 use crate::request;
+use crate::configuration::CONFIG;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ResponseError {
@@ -31,37 +34,40 @@ pub struct Response {
     pub status: StatusCode,
     pub version: RequestVersion,
     pub fields: HashMap<String, String>,
-    pub payload: String,
+    pub content: String,
 }
 
-impl Response {
-    /// Create a new Response structure with some default values. 
-    pub fn new() -> Self {
+impl Default for Response {
+    fn default() -> Self {
         Response {
             status:  StatusCode::Unknown,
             version: RequestVersion::HTTP1,
             fields:  HashMap::<String, String>::new(),
-            payload: String::new(),
+            content: String::new(),
         }
     }
+}
 
-    /// Build a response for the client. 
-    pub fn create_response(&mut self, h: &request::Header) {
+impl Response {
+    /// Create a new Response structure with some default values. 
+    pub fn new(h: &request::Header) -> Self {
+        let mut response = Response::default();
+        
         if !h.is_valid() {
-            self.status = StatusCode::BadRequest;
-            return
+            response.status = StatusCode::BadRequest;
+            return response;
         }
 
-        match self.get_resource(h.get_path()) {
-            Ok(_) => self.status = StatusCode::OK,
-            Err(_) => {
-                self.status = StatusCode::NotFound;
-                self.payload = "".to_string();
-                return
-            },
-        };
-
-        self.status = StatusCode::OK;
+        // Respond to the type of method
+        let m = h.get_method();
+        match m {
+            RequestMethod::Get => response.get_request(&h),
+            RequestMethod::Head => response.head_request(&h),
+            RequestMethod::Post => response.post_request(&h),
+            _ => response.unsupported_request(&h),
+        }
+        
+        response
     }
 
     pub fn to_network(&self) -> String {
@@ -72,9 +78,9 @@ impl Response {
         r.push(status_to_string(self.status).as_bytes().to_vec());
         r.push(b"\r\n");
         r.push(b"Content-Length: ");
-        r.push(self.payload.len().to_string().as_bytes().to_vec());
+        r.push(self.content.len().to_string().as_bytes().to_vec());
         r.push(b"\r\n\r\n");
-        r.push(self.payload.clone());
+        r.push(self.content.clone());
         */
         let r;
         if self.status == StatusCode::BadRequest    ||
@@ -92,17 +98,32 @@ impl Response {
                 "{} {}\r\nContent-Lenght: {}\r\n\r\n{}",
                 version_to_string(&self.version),
                 status_to_string(&self.status),
-                self.payload.len(),
-                self.payload
+                self.content.len(),
+                self.content
             };
         }
-
         r
     }
 
     fn get_resource(&mut self, p: &str) -> Result<(), ResponseError> {
         if p == "/" {
-            let mut file = match File::open("http/index.html") {
+            // Get the index
+            let index = match &CONFIG.root_file {
+                Some(x) => &x,
+                None => {
+                    match &CONFIG.default_root_file {
+                        Some(x) => x,
+                        _ => return Err(ResponseError {
+                            message: "Could not find a default root file!".to_string(),
+                            line: line!(),
+                            column: column!(),
+                        })
+                    }
+                }
+            };
+            let doc_root = &CONFIG.doc_root; 
+
+            let mut file = match File::open(&format!("{}/{}", doc_root, index)) {
                 Ok(file) => file,
                 Err(x) => return Err(ResponseError {
                     message: format!("Could not open file! {}", x),
@@ -111,23 +132,69 @@ impl Response {
                 }),
             };
 
-            match file.read_to_string(&mut self.payload) {
+            match file.read_to_string(&mut self.content) {
                 Ok(_) => return Ok(()),
                 Err(x) => return Err(ResponseError {
-                    message: format!("Could not open file! {}", x),
+                    message: format!("Could not read file! {}", x),
                     line: line!(),
                     column: column!(),
                 }),
             };
+        } else {
+            // If the resource is not the index, we want to walk the directory
+            // tree and find it. 
+            let p = format!("{}{}", CONFIG.doc_root, p);
+            let path = Path::new(&p);
+            if path.exists() {
+                let mut file = match File::open(path) {
+                    Ok(file) => file,
+                    Err(x) => return Err(ResponseError {
+                        message: format!("Could not open file! {}", x),
+                        line: line!(),
+                        column: column!(),
+                    }),
+                };
+                match file.read_to_string(&mut self.content) {
+                    Ok(_) => return Ok(()),
+                    Err(x) => return Err(ResponseError {
+                        message: format!("Could not read file! {}", x),
+                        line: line!(),
+                        column: column!(),
+                    }),
+                }
+            }
         }
-        /*
-         * else
-         */
+
         Err(ResponseError {
             message: "Could not find file!".to_string(),
             line: line!(),
             column: column!(),
         })
+    }
+    
+    // Handle a GET request from a client
+    fn get_request(&mut self, req: &request::Header) {
+        match self.get_resource(req.get_path()) {
+            Ok(_) => self.status = StatusCode::OK,
+            Err(_) => {
+                self.status = StatusCode::NotFound;
+                self.content = "".to_string();
+            },
+        }
+
+        // Are their any fields we want to look at?
+    }
+
+    fn head_request(&mut self, req: &request::Header) {
+        todo!()
+    }
+
+    fn post_request(&mut self, req: &request::Header) {
+        todo!()
+    }
+
+    fn unsupported_request(&mut self, req: &request::Header) {
+        todo!()
     }
 }
 

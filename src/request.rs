@@ -13,6 +13,7 @@ use std::str;
 use std::collections::HashMap;
 
 use crate::protocol; 
+use crate::configuration::CONFIG;
 
 /// The standard error that the request parser will produce if there
 /// is any problem parsing the request. For the most part, if the 
@@ -56,10 +57,24 @@ pub struct Header {
     unknown_fields: HashMap<String, String>,
 }
 
+// Create a empty header
+impl Default for Header {
+    fn default() -> Self {
+        Header {
+            valid: false,
+            method: protocol::RequestMethod::Unknown,
+            version: protocol::RequestVersion::Unknown,
+            path: String::new(),
+            fields: HashMap::new(),
+            unknown_fields: HashMap::new(),
+        }
+    }
+}
+
 impl Header {
-    pub fn new(buf: &[u8]) -> Self {
+    pub fn new(buf: &[u8], size: usize) -> Self {
         let request = str::from_utf8(&buf).unwrap().to_string();
-        let mut header = init_header();
+        let mut header = Header::default();
 
         // A simple request is defined as
         //      |GET /CRLF|
@@ -140,6 +155,17 @@ impl Header {
         &self.path
     }
 
+    pub fn get_method(&self) -> protocol::RequestMethod {
+        self.method
+    }
+
+    pub fn get_header_field(&self, r: protocol::RequestField) -> Option<&str> {
+        match self.fields.get(&r) {
+            Some(x) => Some(x),
+            None => None,
+        }
+    }
+
     // According to RFC1945 any unrecognized header fields are to 
     // be treated as `Entity-Header` fields. Also the spec allows 
     // for experimental headers as long as both parties in 
@@ -200,16 +226,4 @@ impl Header {
     }
 } // impl Header
 
-// Create a empty header
-fn init_header() -> Header {
-    let header = Header {
-        valid: false,
-        method: protocol::RequestMethod::Unknown,
-        version: protocol::RequestVersion::Unknown,
-        path: String::new(),
-        fields: HashMap::new(),
-        unknown_fields: HashMap::new(),
-    };
 
-    header
-}

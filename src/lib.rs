@@ -7,15 +7,29 @@
 mod request;
 mod response;
 mod protocol;
+mod configuration;
 
 use std::net::{ TcpListener, TcpStream, Shutdown };
 use std::io::{ Read, Write };
 use std::thread;
-
 use crate::request::Header;
 use crate::response::Response;
+use crate::configuration::CONFIG;
 
-pub fn listen() -> () {
+type Result<T> = std::result::Result<T, TinyHttpError>;
+
+pub struct TinyHttpError; 
+
+pub fn tiny_http() -> Result<()> {
+    //println!("Config is: {:?}", *CONFIG);
+
+    match listen() {
+        Ok(_) => return Ok(()),
+        Err(_) => return Err(TinyHttpError),
+    };
+}
+
+fn listen() -> Result<()> {
     let listen = TcpListener::bind("127.0.0.1:8080").unwrap();
     // TODO
     //  listen.set_ttl(X)
@@ -34,20 +48,21 @@ pub fn listen() -> () {
             }
         }
     }
+    Ok(())
 }
 
 fn new_connection(mut conn: TcpStream) -> () {
     println!("New connection from {}", conn.peer_addr().unwrap());
 
-    let mut buf = [0 as u8; 1024];
+    let mut buf = [0 as u8; 2048];
     let result = conn.read(&mut buf);
 
+
     match result {
-        Ok(_size) => { // TODO Who knows if we are going to need size yet??
-            let header = Header::new(&buf);
-            let mut res = Response::new();
+        Ok(size) => { // TODO Who knows if we are going to need size yet??
+            let header = Header::new(&buf, size);
+            let mut res = Response::new(&header);
             header.print();
-            res.create_response(&header);
             let r = res.to_network();
             conn.write(r.as_bytes()).unwrap();
             conn.flush().unwrap();
@@ -60,7 +75,3 @@ fn new_connection(mut conn: TcpStream) -> () {
         }
     };
 }
-
-
-
-

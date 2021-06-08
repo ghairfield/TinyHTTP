@@ -7,5 +7,5 @@
 use tiny_http;
 
 fn main() {
-    tiny_http::listen();
+    tiny_http::tiny_http();
 }

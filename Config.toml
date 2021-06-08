@@ -1,0 +1,36 @@
+##############################################
+## These are required for the server to run ##
+##############################################
+
+# The host or domain this server is running on. 
+host = '127.0.0.1'
+
+# Port to use when listening for incomming connections
+port = 8080
+
+# Location of the document root, where the resources of the 
+# server are stored. Most linux machines this is /var/www/html/
+# Depending on where you set this, make sure you have set the
+# premissions correctly.
+doc_root = 'http'
+
+###################################################
+## These are not required, but should be reviwed ##
+###################################################
+
+# Set the maximum buffer TinyHTTP uses (not enforced)
+max_buffer = 2048
+
+# If the root file is not specified then `index.html` is assumed.
+# Not setting this and not haveing an `index.html` would make any
+# root request return 404 Not Found.
+root_file = "index.html"
+
+# The default root file. If `root_file` is not specified this is
+# the fallback. If nothing is specified here, then `index.html`
+# is the assumption.
+#default_root_file =
+
+# If a client requests a resource that can not be found, this is
+# the page returned.
+#custom_404 = 

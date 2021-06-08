@@ -1,6 +1,6 @@
 # TinyHTTP
 
-CS410P Spring 2021 Tiny Rust HTTP/1.0 Server in Rust
+CS410P Spring 2021 Tiny Rust HTTP/1.0 Server in Rust.
 
 # Description
 
@@ -10,10 +10,12 @@ see by the end of the quarter.
 
 # Usage
 
+See the `examples` folder for usage.
+
 # Implemented
 
 - [X] Accept a connection
-- [ ] Respond to a request
+- [X] Respond to a request
 - [ ] Close the connection
 - [X] Method Definitions
   - [X] GET

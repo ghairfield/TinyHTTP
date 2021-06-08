@@ -41,16 +41,23 @@ pub struct ParsingError {
 /// A request of this type would be a HTTP/0.9 request.
 #[derive(Debug)]
 pub struct Header {
+    /// Is request in valid format? 
     valid: bool,
+    /// Request type e.g GET, HEAD, POST
     method: protocol::RequestMethod,
+    /// Request version e.g SimpleRequest, HTTP/1.0, HTTP/1.1
     version: protocol::RequestVersion,
+    /// URI
     path: String,
+    /// HTTP/1.0 Known fields
     fields: HashMap<protocol::RequestField, String>,
+    /// Possible fields from HTTP/1.1 request, non-documented fileds.
+    /// See [RFC 1945, Section 10. Header Field Definitions]
     unknown_fields: HashMap<String, String>,
 }
 
 impl Header {
-    pub fn new(buf: &[u8]) -> Result<Header, ParsingError> {
+    pub fn new(buf: &[u8]) -> Self {
         let request = str::from_utf8(&buf).unwrap().to_string();
         let mut header = init_header();
 
@@ -58,22 +65,14 @@ impl Header {
         //      |GET /CRLF|
         // Anything less than this is not a valid request
         if request.len() < 7 {
-            return Err(ParsingError {
-                message: "Request is not valid.".to_string(),
-                line: line!(),
-                column: column!(),
-            });
+            return header        
         }
 
         let mut parts: Vec<&str> = request.split("\r\n").collect();
 
         let method: Vec<&str> = parts[0].split(' ').collect();
         if method.len() < 2 {
-            return Err(ParsingError {
-                message: "Invalid Request".to_string(),
-                line: line!(),
-                column: column!()
-            });
+            return header
         }
 
         match method[0] {
@@ -85,11 +84,7 @@ impl Header {
             "UNLINK" => header.method = protocol::RequestMethod::Unlink,
             "DELETE" => header.method = protocol::RequestMethod::Delete,
             _ => {
-                return Err(ParsingError {
-                    message: "Could not find method type".to_string(),
-                    line: line!(),
-                    column: column!()
-                });
+                return header;
             }
         }
 
@@ -105,11 +100,7 @@ impl Header {
             header.version = protocol::RequestVersion::HTTP11;
         }
         else {
-            return Err(ParsingError {
-                message: "Invalid HTTP version.".to_string(),
-                line: line!(),
-                column: column!(),
-            });
+            return header; 
         }
 
         // Remove the method line since we parsed it already
@@ -118,7 +109,7 @@ impl Header {
 
         // If we get here the request is valid
         header.valid = true;
-        Ok(header)
+        header
     }
 
     /// Print the contents of the header field
@@ -143,6 +134,10 @@ impl Header {
 
     pub fn is_valid(&self) -> bool {
         self.valid
+    }
+
+    pub fn get_path(&self) -> &str {
+        &self.path
     }
 
     // According to RFC1945 any unrecognized header fields are to 

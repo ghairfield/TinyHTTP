@@ -102,6 +102,7 @@ pub enum RequestField {
 
 /// Response codes for HTML/1.0
 #[allow(dead_code)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum StatusCode {
     OK = 200,
     Created = 201,

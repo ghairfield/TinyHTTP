@@ -44,13 +44,14 @@ fn new_connection(mut conn: TcpStream) -> () {
 
     match result {
         Ok(_size) => { // TODO Who knows if we are going to need size yet??
-            let header = Header::new(&buf).unwrap();
+            let header = Header::new(&buf);
             let mut res = Response::new();
-            res.create_response(&header).unwrap();
+            header.print();
+            res.create_response(&header);
             let r = res.to_network();
             conn.write(r.as_bytes()).unwrap();
             conn.flush().unwrap();
-            header.print();
+            println!("----Responded----");
         }
         Err(e) => {
             println!("An error occured while reading the stream! ip: {}, err: {}",

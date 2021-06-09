@@ -64,7 +64,7 @@ fn new_connection(mut conn: TcpStream) -> () {
             let mut res = Response::new(&header);
             header.print();
             let r = res.to_network();
-            conn.write(r.as_bytes()).unwrap();
+            conn.write_all(&r).unwrap();
             conn.flush().unwrap();
             println!("----Responded----");
         }

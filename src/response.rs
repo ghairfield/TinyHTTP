@@ -34,7 +34,7 @@ pub struct Response {
     pub status: StatusCode,
     pub version: RequestVersion,
     pub fields: HashMap<String, String>,
-    pub content: String,
+    pub content: Vec<u8>,
 }
 
 impl Default for Response {
@@ -43,7 +43,7 @@ impl Default for Response {
             status:  StatusCode::Unknown,
             version: RequestVersion::HTTP1,
             fields:  HashMap::<String, String>::new(),
-            content: String::new(),
+            content: Vec::<u8>::new(),
         }
     }
 }
@@ -70,9 +70,9 @@ impl Response {
         response
     }
 
-    pub fn to_network(&self) -> String {
+    pub fn to_network(&mut self) -> Vec<u8> {
+        let mut resp_header = Vec::<u8>::new();
         /*
-        let mut r: Vec::<u8>::new();
         r.push(version_to_string(self.version).as_bytes().to_vec());
         r.push(b' ');
         r.push(status_to_string(self.status).as_bytes().to_vec());
@@ -93,16 +93,22 @@ impl Response {
             version_to_string(&self.version),
             status_to_string(&self.status),
             };
+
         } else {
             r = format!{
-                "{} {}\r\nContent-Lenght: {}\r\n\r\n{}",
+                "{} {}\r\nContent-Lenght: {}\r\n\r\n",
                 version_to_string(&self.version),
                 status_to_string(&self.status),
-                self.content.len(),
-                self.content
+                self.content.len()
             };
         }
-        r
+
+        resp_header = r.as_bytes().to_vec();
+        if !self.content.is_empty() {
+            resp_header.append(&mut self.content);
+        }
+
+        resp_header
     }
 
     fn get_resource(&mut self, p: &str) -> Result<(), ResponseError> {
@@ -132,7 +138,7 @@ impl Response {
                 }),
             };
 
-            match file.read_to_string(&mut self.content) {
+            match file.read_to_end(&mut self.content) {
                 Ok(_) => return Ok(()),
                 Err(x) => return Err(ResponseError {
                     message: format!("Could not read file! {}", x),
@@ -154,7 +160,7 @@ impl Response {
                         column: column!(),
                     }),
                 };
-                match file.read_to_string(&mut self.content) {
+                match file.read_to_end(&mut self.content) {
                     Ok(_) => return Ok(()),
                     Err(x) => return Err(ResponseError {
                         message: format!("Could not read file! {}", x),
@@ -178,7 +184,6 @@ impl Response {
             Ok(_) => self.status = StatusCode::OK,
             Err(_) => {
                 self.status = StatusCode::NotFound;
-                self.content = "".to_string();
             },
         }
 

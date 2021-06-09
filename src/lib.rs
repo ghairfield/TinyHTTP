@@ -4,29 +4,29 @@
 //! CS410P Rust Programming
 //! Spring 2021
 
+mod configuration;
+mod protocol;
 mod request;
 mod response;
-mod protocol;
-mod configuration;
 
-use std::net::{ TcpListener, TcpStream, Shutdown };
-use std::io::{ Read, Write };
-use std::thread;
+use crate::configuration::CONFIG;
 use crate::request::Header;
 use crate::response::Response;
-use crate::configuration::CONFIG;
+use std::io::{Read, Write};
+use std::net::{Shutdown, TcpListener, TcpStream};
+use std::thread;
 
 type Result<T> = std::result::Result<T, TinyHttpError>;
 
-pub struct TinyHttpError; 
+pub struct TinyHttpError;
 
 pub fn tiny_http() -> Result<()> {
     //println!("Config is: {:?}", *CONFIG);
 
     match listen() {
-        Ok(_) => return Ok(()),
-        Err(_) => return Err(TinyHttpError),
-    };
+        Ok(_) => Ok(()),
+        Err(_) => Err(TinyHttpError),
+    }
 }
 
 fn listen() -> Result<()> {
@@ -45,32 +45,36 @@ fn listen() -> Result<()> {
             }
             Err(e) => {
                 // TODO log error
-                println!("Error connecting to client! {}", e);             
+                println!("Error connecting to client! {}", e);
             }
         }
     }
     Ok(())
 }
 
-fn new_connection(mut conn: TcpStream) -> () {
+fn new_connection(mut conn: TcpStream) {
     println!("New connection from {}", conn.peer_addr().unwrap());
 
-    let mut buf = [0 as u8; 2048];
+    let mut buf = [0_u8; 2048];
     let result = conn.read(&mut buf);
 
     match result {
-        Ok(size) => { // TODO Who knows if we are going to need size yet??
-            let header = Header::new(&buf, size);
+        Ok(_size) => {
+            // TODO Who knows if we are going to need size yet??
+            let header = Header::new(&buf);
             let mut res = Response::new(&header);
             //header.print();
-            let r = res.to_network();
+            let r = res.respond();
             conn.write_all(&r).unwrap();
             conn.flush().unwrap();
             println!("----Responded----");
         }
         Err(e) => {
-            println!("An error occured while reading the stream! ip: {}, err: {}",
-                conn.peer_addr().unwrap(), e);
+            println!(
+                "An error occured while reading the stream! ip: {}, err: {}",
+                conn.peer_addr().unwrap(),
+                e
+            );
             conn.shutdown(Shutdown::Both).unwrap();
         }
     };

@@ -4,7 +4,7 @@
 //! CS410P Rust Programming
 //! Spring 2021
 
-/// HTTP request method. 
+/// HTTP request method.
 ///     Get: Standard request, supply the resource requested
 ///     Head: Same as GET but do not send content
 ///     Post: Client is responding with information
@@ -14,27 +14,27 @@ pub enum RequestMethod {
     Get,
     Head,
     Post,
-    // extended HTTP/1.0 methods 
+    // extended HTTP/1.0 methods
     Put,
     Delete,
     Link,
     Unlink,
     // exclusive HTTP/1.1 methods
     // others
-    Unknown
+    Unknown,
 }
 
-/// HTTP request version. It comes as either a simple request, HTTP/1.0 or 
-/// HTTP/1.1. Anything else is invalid. 
+/// HTTP request version. It comes as either a simple request, HTTP/1.0 or
+/// HTTP/1.1. Anything else is invalid.
 ///
-/// Currently TinyHTTP communicates according to the HTTP/1.0 specification. 
+/// Currently TinyHTTP communicates according to the HTTP/1.0 specification.
 /// The biggest upgrade to HTTP/1.1 is HTTPS and additional header fields.
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Copy)]
 pub enum RequestVersion {
     SimpleRequest, // Essentially HTTP/0.9
-    HTTP1,  // HTTP/1.0
-    HTTP11, // HTTP/1.1
-    Unknown
+    HTTP1,         // HTTP/1.0
+    HTTP11,        // HTTP/1.1
+    Unknown,
 }
 
 /// The types of header field definitions we accept. A simple explanation
@@ -42,11 +42,11 @@ pub enum RequestVersion {
 /// for more information.
 ///     Accept: Lists the set of methods supported by the URI. Ignored of
 ///             part of a POST request
-///     Authorization: A user agent that wishes to authenticate with the 
-///             server. Mostly happens after a 401 response. 
+///     Authorization: A user agent that wishes to authenticate with the
+///             server. Mostly happens after a 401 response.
 ///             Should be in the form: `"Authorization" : credentials`
 ///     Content-Encoding: Indicates what additional content coding has
-///             been applied to the resource. 
+///             been applied to the resource.
 ///     Content-Length: The size of the `Entity-Body` less the header
 ///             information. The size of the payload. In the case of a
 ///             HEAD request, it represents "what would of been sent"
@@ -63,9 +63,9 @@ pub enum RequestVersion {
 ///     If-Modified-Since: Used with GET method, if the requested resource
 ///             has not been modified since the time specified, return 304,
 ///             Not-Modified.
-///     Last-Modified: The date and time at which the sender believes the 
+///     Last-Modified: The date and time at which the sender believes the
 ///             resource was last modified.
-///     Location: Identifies the exact location of a resource that was 
+///     Location: Identifies the exact location of a resource that was
 ///             identified by the requested URI. For 3xx responses the
 ///             server must indicate the preferred URL
 ///     Pragma: Implementation specific directives that may apply to any
@@ -75,7 +75,7 @@ pub enum RequestVersion {
 ///     Server: Contains information about the software used by the origin
 ///             server to handle the request.
 ///     User-Agent: Request field containing information about the user
-///             agent originating the request. 
+///             agent originating the request.
 ///     WWW-Authenticate: Used with 401 Unauthorized response message. The
 ///             field consists of at least one challenge that indicates the
 ///             authentication scheme.
@@ -101,7 +101,7 @@ pub enum RequestField {
     // extended HTTP/1.0
     // exclusive HTTP/1.1
     // others
-    Unknown
+    Unknown,
 }
 
 /// Response codes for HTML/1.0
@@ -123,15 +123,15 @@ pub enum StatusCode {
     NotImplemented = 501,
     BadGateway = 502,
     ServiceUnavailable = 503,
-    Unknown
+    Unknown,
 }
 
 /// Get the string representation of a request type.
 pub fn method_to_string(r: &RequestMethod) -> String {
     match r {
-        RequestMethod::Get => "GET".to_string(), 
-        RequestMethod::Head => "HEAD".to_string(), 
-        RequestMethod::Post => "POST".to_string(), 
+        RequestMethod::Get => "GET".to_string(),
+        RequestMethod::Head => "HEAD".to_string(),
+        RequestMethod::Post => "POST".to_string(),
         RequestMethod::Put => "PUT".to_string(),
         RequestMethod::Link => "LINK".to_string(),
         RequestMethod::Unlink => "UNLINK".to_string(),

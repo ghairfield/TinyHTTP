@@ -1,11 +1,10 @@
+use ::std::io::prelude::*;
 use lazy_static::lazy_static;
-use std::fs::File;
-use::std::io::prelude::*;
-use toml;
 use serde::Deserialize;
+use std::fs::File;
 
 lazy_static! {
-    // Global configuration variable. 
+    // Global configuration variable.
     pub static ref CONFIG: Config = Config::new();
 }
 
@@ -17,7 +16,7 @@ pub struct Config {
     pub image_list: Vec<String>,
     pub file_list: Vec<String>,
     pub default_root_file: Option<String>,
-    pub root_file : Option<String>,
+    pub root_file: Option<String>,
     pub max_buffer: Option<usize>,
     pub custom_404: Option<String>,
 }

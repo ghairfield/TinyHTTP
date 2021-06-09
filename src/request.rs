@@ -9,17 +9,16 @@
 //! Spring 2021
 //!
 
-use std::str;
 use std::collections::HashMap;
+use std::str;
 
-use crate::protocol; 
-use crate::configuration::CONFIG;
+use crate::protocol;
 
 /// The standard error that the request parser will produce if there
-/// is any problem parsing the request. For the most part, if the 
+/// is any problem parsing the request. For the most part, if the
 /// request line is bad, then the entire request is bad. A basic
 /// request *must* contain: GET /CLRF
-/// This is the simple request, other fields and definitions are 
+/// This is the simple request, other fields and definitions are
 /// optional and augment the request.
 #[derive(Debug, Clone)]
 pub struct ParsingError {
@@ -28,21 +27,21 @@ pub struct ParsingError {
     pub column: u32,
 }
 
-/// When a request is initiated, the contents of 
-/// that request are stored here. 
+/// When a request is initiated, the contents of
+/// that request are stored here.
 ///
-/// If `valid` is false, then there is no guarantee 
-/// what else is valid in the header. Some, all or 
-/// none of the fields may be completed, but they 
-/// are guaranteed to be initialized. 
+/// If `valid` is false, then there is no guarantee
+/// what else is valid in the header. Some, all or
+/// none of the fields may be completed, but they
+/// are guaranteed to be initialized.
 ///
 /// Also if `request_version` is RequestVersion::SimpleRequest
 /// then the only attributes here that will of been implemented
-/// are `method`, `version` and `path`. 
+/// are `method`, `version` and `path`.
 /// A request of this type would be a HTTP/0.9 request.
 #[derive(Debug)]
 pub struct Header {
-    /// Is request in valid format? 
+    /// Is request in valid format?
     valid: bool,
     /// Request type e.g GET, HEAD, POST
     method: protocol::RequestMethod,
@@ -72,7 +71,7 @@ impl Default for Header {
 }
 
 impl Header {
-    pub fn new(buf: &[u8], size: usize) -> Self {
+    pub fn new(buf: &[u8]) -> Self {
         let request = str::from_utf8(&buf).unwrap().to_string();
         let mut header = Header::default();
 
@@ -80,14 +79,14 @@ impl Header {
         //      |GET /CRLF|
         // Anything less than this is not a valid request
         if request.len() < 7 {
-            return header        
+            return header;
         }
 
         let mut parts: Vec<&str> = request.split("\r\n").collect();
 
         let method: Vec<&str> = parts[0].split(' ').collect();
         if method.len() < 2 {
-            return header
+            return header;
         }
 
         match method[0] {
@@ -107,20 +106,17 @@ impl Header {
 
         if method.len() == 2 {
             header.version = protocol::RequestVersion::SimpleRequest;
-        }
-        else if method[2] == "HTTP/1.0" {
+        } else if method[2] == "HTTP/1.0" {
             header.version = protocol::RequestVersion::HTTP1;
-        }
-        else if method[2] == "HTTP/1.1" {
+        } else if method[2] == "HTTP/1.1" {
             header.version = protocol::RequestVersion::HTTP11;
-        }
-        else {
-            return header; 
+        } else {
+            return header;
         }
 
         // Remove the method line since we parsed it already
         parts.remove(0);
-        header.parse_fields(&parts); 
+        header.parse_fields(&parts);
 
         // If we get here the request is valid
         header.valid = true;
@@ -133,8 +129,10 @@ impl Header {
         let method = protocol::method_to_string(&self.method);
         let version = protocol::version_to_string(&self.version);
 
-        println!("Request Line: {}, Path: {}, Version {}",
-            method, self.path, version);
+        println!(
+            "Request Line: {}, Path: {}, Version {}",
+            method, self.path, version
+        );
 
         println!("---- Known Fields ----");
         for (key, value) in &self.fields {
@@ -160,70 +158,59 @@ impl Header {
     }
 
     pub fn get_header_field(&self, r: protocol::RequestField) -> Option<&str> {
-        match self.fields.get(&r) {
-            Some(x) => Some(x),
-            None => None,
-        }
+        self.fields.get(&r).map(|x| &x[..])
     }
 
-    // According to RFC1945 any unrecognized header fields are to 
-    // be treated as `Entity-Header` fields. Also the spec allows 
-    // for experimental headers as long as both parties in 
-    // communication recognize them. 
+    // According to RFC1945 any unrecognized header fields are to
+    // be treated as `Entity-Header` fields. Also the spec allows
+    // for experimental headers as long as both parties in
+    // communication recognize them.
     //
-    // What ever the field is, we store it. Unknown fields are 
-    // stored separately than known fields. 
-    fn parse_fields(&mut self, parts: &Vec<&str>) {
+    // What ever the field is, we store it. Unknown fields are
+    // stored separately than known fields.
+    fn parse_fields(&mut self, parts: &[&str]) {
         for i in parts {
             let x: Vec<&str> = i.split(": ").collect();
-           
+
             if x.len() == 1 {
                 // TODO: Is there a better way to deal with this??
                 // We could be here for 2 reasons:
                 //   1. The final field in a request is CLRF
-                //   2. An invalid `field: parameter` with no parameter 
+                //   2. An invalid `field: parameter` with no parameter
                 // Either way, we ignore it.
                 continue;
             }
 
             let field = Header::field_to_type(x[0]);
             if field == protocol::RequestField::Unknown {
-                self.unknown_fields.insert(
-                    x[0].to_string(),
-                    x[1].to_string()
-                );
-            }
-            else {
-                self.fields.insert(
-                    field,
-                    x[1].to_string()
-                );
+                self.unknown_fields
+                    .insert(x[0].to_string(), x[1].to_string());
+            } else {
+                self.fields.insert(field, x[1].to_string());
             }
         }
     }
 
-    // Convert a request field to a known type. 
+    // Convert a request field to a known type.
     fn field_to_type(f: &str) -> protocol::RequestField {
         match f {
-            "Allow" => return protocol::RequestField::Allow,
-            "Authorization" => return protocol::RequestField::Authorization,
-            "Content-Encoding" => return protocol::RequestField::ContentEncoding,
-            "Content-Length" => return protocol::RequestField::ContentLength,
-            "Content-Type" => return protocol::RequestField::ContentType,
-            "Date" => return protocol::RequestField::Date,
-            "Expires" => return protocol::RequestField::Expires,
-            "From" => return protocol::RequestField::FromField,
-            "If-Modified-Since" => return protocol::RequestField::IfModifiedSince,
-            "Last-Modified" => return protocol::RequestField::LastModified,
-            "Location" => return protocol::RequestField::Location,
-            "Pragma" => return protocol::RequestField::Pragma,
-            "Referer" => return protocol::RequestField::Referer,
-            "Server" => return protocol::RequestField::Server,
-            "User-Agent" => return protocol::RequestField::UserAgent,
-            "WWW-Authenticate" => return protocol::RequestField::WwwAuthenticate,
-            _ => return protocol::RequestField::Unknown,
+            "Allow" => protocol::RequestField::Allow,
+            "Authorization" => protocol::RequestField::Authorization,
+            "Content-Encoding" => protocol::RequestField::ContentEncoding,
+            "Content-Length" => protocol::RequestField::ContentLength,
+            "Content-Type" => protocol::RequestField::ContentType,
+            "Date" => protocol::RequestField::Date,
+            "Expires" => protocol::RequestField::Expires,
+            "From" => protocol::RequestField::FromField,
+            "If-Modified-Since" => protocol::RequestField::IfModifiedSince,
+            "Last-Modified" => protocol::RequestField::LastModified,
+            "Location" => protocol::RequestField::Location,
+            "Pragma" => protocol::RequestField::Pragma,
+            "Referer" => protocol::RequestField::Referer,
+            "Server" => protocol::RequestField::Server,
+            "User-Agent" => protocol::RequestField::UserAgent,
+            "WWW-Authenticate" => protocol::RequestField::WwwAuthenticate,
+            _ => protocol::RequestField::Unknown,
         }
     }
 } // impl Header
-
-

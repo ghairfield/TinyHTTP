@@ -9,18 +9,16 @@
 //! TODO
 //! ```
 
-use std::fs::{ self, File, Metadata };
+use chrono::{DateTime, Local, TimeZone, Utc};
+use std::collections::HashMap;
+use std::fs::{File, Metadata};
 use std::io::prelude::*;
 use std::path::Path;
-use std::ffi::OsStr;
-use std::collections::HashMap;
-use chrono::prelude::*;
-use chrono::{ DateTime, TimeZone, Utc, Local };
 use std::time::SystemTime;
 
+use crate::configuration::CONFIG;
 use crate::protocol::*;
 use crate::request;
-use crate::configuration::CONFIG;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ResponseError {
@@ -43,16 +41,16 @@ pub struct Response {
 impl Default for Response {
     fn default() -> Self {
         Response {
-            status:  StatusCode::Unknown,
+            status: StatusCode::Unknown,
             version: RequestVersion::HTTP1,
-            fields:  HashMap::<String, String>::new(),
+            fields: HashMap::<String, String>::new(),
             content: Vec::<u8>::new(),
         }
     }
 }
 
 impl Response {
-    /// Create a new Response structure with some default values. 
+    /// Create a new Response structure with some default values.
     pub fn new(h: &request::Header) -> Self {
         let mut response = Response::default();
 
@@ -74,35 +72,36 @@ impl Response {
     }
 
     /// Format HTTP response to network ready data.
-    pub fn to_network(&mut self) -> Vec<u8> {
-        let mut resp_header = Vec::<u8>::new();
+    pub fn respond(&mut self) -> Vec<u8> {
+        let mut resp_header;
         let mut r;
 
         // If there is a bad request, just respond with error.
-        if self.status == StatusCode::BadRequest    ||
-           self.status == StatusCode::Unauthorized  ||
-           self.status == StatusCode::Forbidden     ||
-           self.status == StatusCode::NotFound 
+        if self.status == StatusCode::BadRequest
+            || self.status == StatusCode::Unauthorized
+            || self.status == StatusCode::Forbidden
+            || self.status == StatusCode::NotFound
         {
-            r = format!{
+            r = format! {
                 "{} {}\r\n\r\n",
                 version_to_string(&self.version),
                 status_to_string(&self.status)
             };
 
             resp_header = r.as_bytes().to_vec();
-        } 
-        else {
+        } else {
             // We have a request that needs a response
-            r = String::from(format!("{} {}\r\n", 
-                    version_to_string(&self.version), status_to_string(&self.status))); 
+            r = format!(
+                "{} {}\r\n",
+                version_to_string(&self.version),
+                status_to_string(&self.status)
+            );
 
             for (key, value) in &self.fields {
                 r.push_str(&format!("{}{}\r\n", key, value));
             }
 
             r.push_str("\r\n");
-
 
             resp_header = r.as_bytes().to_vec();
             if !self.content.is_empty() {
@@ -116,77 +115,85 @@ impl Response {
     fn get_last_modified(meta: &Metadata) -> Result<String, ResponseError> {
         let lm = match meta.modified() {
             Ok(lm) => lm,
-            Err(_) => return Err(ResponseError {
-                message: "Could not get modifed data on file".to_string(),
-                line: line!(),
-                column: column!(),
-            }),
+            Err(_) => {
+                return Err(ResponseError {
+                    message: "Could not get modifed data on file".to_string(),
+                    line: line!(),
+                    column: column!(),
+                })
+            }
         };
 
         let sec_from_epoch = lm.duration_since(SystemTime::UNIX_EPOCH).unwrap();
         let local_dt = Local.timestamp(sec_from_epoch.as_secs() as i64, 0);
         let utc_dt: DateTime<Utc> = DateTime::from(local_dt);
 
-        Ok(format!("{}", utc_dt.format("%a, %d %b %Y %H:%M:%S GMT")).to_string())
+        Ok(format!("{}", utc_dt.format("%a, %d %b %Y %H:%M:%S GMT")))
     }
 
     fn get_resource(&mut self, p: &str) -> Result<(), ResponseError> {
-        let doc_root = &CONFIG.doc_root; 
+        let doc_root = &CONFIG.doc_root;
         let index = match &CONFIG.root_file {
             Some(x) => &x,
-            None => {
-                match &CONFIG.default_root_file {
-                    Some(x) => x,
-                    _ => return Err(ResponseError {
+            None => match &CONFIG.default_root_file {
+                Some(x) => x,
+                _ => {
+                    return Err(ResponseError {
                         message: "Could not find a default root file!".to_string(),
                         line: line!(),
                         column: column!(),
                     })
                 }
-            }
+            },
         };
 
         if p == "/" {
             // Get the home page, specified by Config.toml -> doc_root/default_doc_root
             let mut file = match File::open(&format!("{}/{}", doc_root, index)) {
                 Ok(file) => file,
-                Err(x) => return Err(ResponseError {
-                    message: format!("Could not open file! {}", x),
-                    line: line!(),
-                    column: column!(),
-                }),
+                Err(x) => {
+                    return Err(ResponseError {
+                        message: format!("Could not open file! {}", x),
+                        line: line!(),
+                        column: column!(),
+                    })
+                }
             };
 
             let meta = match file.metadata() {
                 Ok(meta) => meta,
-                Err(_) => return Err(ResponseError {
-                    message: "Could not get meta data on file".to_string(),
-                    line: line!(),
-                    column: column!(),
-                }),
+                Err(_) => {
+                    return Err(ResponseError {
+                        message: "Could not get meta data on file".to_string(),
+                        line: line!(),
+                        column: column!(),
+                    })
+                }
             };
 
-            match Response::get_last_modified(&meta) {
-                Ok(time) => {
-                    self.fields.insert(field_to_string(&RequestField::LastModified), time);
-                }
-                Err(_) => (),
+            if let Ok(time) = Response::get_last_modified(&meta) {
+                self.fields
+                    .insert(field_to_string(&RequestField::LastModified), time);
             }
 
             match file.read_to_end(&mut self.content) {
                 Ok(size) => {
-                    self.fields.insert(field_to_string(&RequestField::ContentLength), size.to_string());
-                },
-                Err(x) => return Err(ResponseError {
-                    message: format!("Could not read file! {}", x),
-                    line: line!(),
-                    column: column!(),
-                }),
+                    self.fields.insert(
+                        field_to_string(&RequestField::ContentLength),
+                        size.to_string(),
+                    );
+                }
+                Err(x) => {
+                    return Err(ResponseError {
+                        message: format!("Could not read file! {}", x),
+                        line: line!(),
+                        column: column!(),
+                    })
+                }
             };
-        } 
-        else {
+        } else {
             // If the resource is not the index, we want to walk the directory
-            // tree and find it. 
+            // tree and find it.
             let p = format!("{}{}", CONFIG.doc_root, p);
             let path = Path::new(&p);
 
@@ -195,38 +202,45 @@ impl Response {
             if path.exists() {
                 let mut file = match File::open(path) {
                     Ok(file) => file,
-                    Err(x) => return Err(ResponseError {
-                        message: format!("Could not open file! {}", x),
-                        line: line!(),
-                        column: column!(),
-                    }),
-                };
-                
-                let meta = match file.metadata() {
-                    Ok(meta) => meta,
-                    Err(_) => return Err(ResponseError {
-                        message: "Could not get meta data on file".to_string(),
-                        line: line!(),
-                        column: column!(),
-                    }),
+                    Err(x) => {
+                        return Err(ResponseError {
+                            message: format!("Could not open file! {}", x),
+                            line: line!(),
+                            column: column!(),
+                        })
+                    }
                 };
 
-                match Response::get_last_modified(&meta) {
-                    Ok(time) => {
-                        self.fields.insert(field_to_string(&RequestField::LastModified), time);
-                    },
-                    Err(_) => (),
+                let meta = match file.metadata() {
+                    Ok(meta) => meta,
+                    Err(_) => {
+                        return Err(ResponseError {
+                            message: "Could not get meta data on file".to_string(),
+                            line: line!(),
+                            column: column!(),
+                        })
+                    }
+                };
+
+                if let Ok(time) = Response::get_last_modified(&meta) {
+                    self.fields
+                        .insert(field_to_string(&RequestField::LastModified), time);
                 }
-                
+
                 match file.read_to_end(&mut self.content) {
                     Ok(size) => {
-                        self.fields.insert(field_to_string(&RequestField::ContentLength), size.to_string());
-                    },
-                    Err(x) => return Err(ResponseError {
-                        message: format!("Could not read file! {}", x),
-                        line: line!(),
+                        self.fields.insert(
+                            field_to_string(&RequestField::ContentLength),
+                            size.to_string(),
+                        );
+                    }
+                    Err(x) => {
+                        return Err(ResponseError {
+                            message: format!("Could not read file! {}", x),
+                            line: line!(),
                             column: column!(),
-                    }),
+                        })
+                    }
                 }
             }
         }
@@ -240,7 +254,7 @@ impl Response {
             Ok(_) => self.status = StatusCode::OK,
             Err(_) => {
                 self.status = StatusCode::NotFound;
-            },
+            }
         }
 
         // Are their any fields we want to look at?
@@ -258,4 +272,3 @@ impl Response {
         todo!()
     }
 }
-

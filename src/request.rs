@@ -54,6 +54,9 @@ pub struct Header {
     /// Possible fields from HTTP/1.1 request, non-documented fileds.
     /// See [RFC 1945, Section 10. Header Field Definitions]
     unknown_fields: HashMap<String, String>,
+    /// POST fields. It should only be used with a POST request
+    /// See [RFC 1945 Secion 8.3 POST]
+    post_fields: HashMap<String, String>,
 }
 
 // Create a empty header
@@ -66,6 +69,7 @@ impl Default for Header {
             path: String::new(),
             fields: HashMap::new(),
             unknown_fields: HashMap::new(),
+            post_fields: HashMap::new(),
         }
     }
 }
@@ -83,7 +87,6 @@ impl Header {
         }
 
         let mut parts: Vec<&str> = request.split("\r\n").collect();
-
         let method: Vec<&str> = parts[0].split(' ').collect();
         if method.len() < 2 {
             return header;
@@ -97,9 +100,7 @@ impl Header {
             "LINK" => header.method = protocol::RequestMethod::Link,
             "UNLINK" => header.method = protocol::RequestMethod::Unlink,
             "DELETE" => header.method = protocol::RequestMethod::Delete,
-            _ => {
-                return header;
-            }
+            _ => return header,
         }
 
         header.path = method[1].to_string();
@@ -143,6 +144,12 @@ impl Header {
         for (key, value) in &self.unknown_fields {
             println!("Field: {} -- Value: {}", key, value);
         }
+        if self.method == protocol::RequestMethod::Post {
+            println!("---- POST Fields ----");
+            for (key, value) in &self.post_fields {
+                println!("Name: {} -- Value: {}", key, value);
+            }
+        }
     }
 
     pub fn is_valid(&self) -> bool {
@@ -173,11 +180,20 @@ impl Header {
             let x: Vec<&str> = i.split(": ").collect();
 
             if x.len() == 1 {
-                // TODO: Is there a better way to deal with this??
+                // Is there a better way to deal with this??
                 // We could be here for 2 reasons:
-                //   1. The final field in a request is CLRF
-                //   2. An invalid `field: parameter` with no parameter
-                // Either way, we ignore it.
+                //   1: This is a POST request with fields, which we capture.
+                //   2. An invalid `field: parameter` with no parameter (invalid request)
+                let field: Vec<&str> = x[0].split("&").collect();
+                if !field.is_empty() {
+                    for i in &field {
+                        let j: Vec<&str> = i.split("=").collect();
+                        if j.len() == 2 {
+                            // POST field!
+                            self.post_fields.insert(j[0].to_string(), j[1].to_string());
+                        }
+                    }
+                }
                 continue;
             }
 

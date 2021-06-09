@@ -261,11 +261,17 @@ impl Response {
     }
 
     fn head_request(&mut self, req: &request::Header) {
-        todo!()
+        match self.get_resource(req.get_path()) {
+            Ok(_) => self.status = StatusCode::OK,
+            Err(_) => {
+                self.status = StatusCode::NotFound;
+            }
+        }
+        self.content.clear();
     }
 
     fn post_request(&mut self, req: &request::Header) {
-        todo!()
+        todo!()    
     }
 
     fn unsupported_request(&mut self, req: &request::Header) {

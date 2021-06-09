@@ -30,7 +30,8 @@ pub fn tiny_http() -> Result<()> {
 }
 
 fn listen() -> Result<()> {
-    let listen = TcpListener::bind("127.0.0.1:8080").unwrap();
+    let listen = TcpListener::bind(format!("{}:{}", CONFIG.host, CONFIG.port)).unwrap();
+
     // TODO
     //  listen.set_ttl(X)
     //  listen.set_nonblocking(true).expect("Cannot set non-blocking")
@@ -57,12 +58,11 @@ fn new_connection(mut conn: TcpStream) -> () {
     let mut buf = [0 as u8; 2048];
     let result = conn.read(&mut buf);
 
-
     match result {
         Ok(size) => { // TODO Who knows if we are going to need size yet??
             let header = Header::new(&buf, size);
             let mut res = Response::new(&header);
-            header.print();
+            //header.print();
             let r = res.to_network();
             conn.write_all(&r).unwrap();
             conn.flush().unwrap();

@@ -9,12 +9,15 @@
 //! TODO
 //! ```
 
-use std::fs::File;
+use std::fs::{ self, File, Metadata };
 use std::io::prelude::*;
 use std::path::Path;
 use std::ffi::OsStr;
-
 use std::collections::HashMap;
+use chrono::prelude::*;
+use chrono::{ DateTime, TimeZone, Utc, Local };
+use std::time::SystemTime;
+
 use crate::protocol::*;
 use crate::request;
 use crate::configuration::CONFIG;
@@ -52,7 +55,7 @@ impl Response {
     /// Create a new Response structure with some default values. 
     pub fn new(h: &request::Header) -> Self {
         let mut response = Response::default();
-        
+
         if !h.is_valid() {
             response.status = StatusCode::BadRequest;
             return response;
@@ -66,69 +69,85 @@ impl Response {
             RequestMethod::Post => response.post_request(&h),
             _ => response.unsupported_request(&h),
         }
-        
+
         response
     }
 
+    /// Format HTTP response to network ready data.
     pub fn to_network(&mut self) -> Vec<u8> {
         let mut resp_header = Vec::<u8>::new();
-        /*
-        r.push(version_to_string(self.version).as_bytes().to_vec());
-        r.push(b' ');
-        r.push(status_to_string(self.status).as_bytes().to_vec());
-        r.push(b"\r\n");
-        r.push(b"Content-Length: ");
-        r.push(self.content.len().to_string().as_bytes().to_vec());
-        r.push(b"\r\n\r\n");
-        r.push(self.content.clone());
-        */
-        let r;
+        let mut r;
+
+        // If there is a bad request, just respond with error.
         if self.status == StatusCode::BadRequest    ||
            self.status == StatusCode::Unauthorized  ||
            self.status == StatusCode::Forbidden     ||
            self.status == StatusCode::NotFound 
         {
             r = format!{
-            "{} {}\r\n\r\n",
-            version_to_string(&self.version),
-            status_to_string(&self.status),
-            };
-
-        } else {
-            r = format!{
-                "{} {}\r\nContent-Lenght: {}\r\n\r\n",
+                "{} {}\r\n\r\n",
                 version_to_string(&self.version),
-                status_to_string(&self.status),
-                self.content.len()
+                status_to_string(&self.status)
             };
-        }
 
-        resp_header = r.as_bytes().to_vec();
-        if !self.content.is_empty() {
-            resp_header.append(&mut self.content);
+            resp_header = r.as_bytes().to_vec();
+        } 
+        else {
+            // We have a request that needs a response
+            r = String::from(format!("{} {}\r\n", 
+                    version_to_string(&self.version), status_to_string(&self.status))); 
+
+            for (key, value) in &self.fields {
+                r.push_str(&format!("{}{}\r\n", key, value));
+            }
+
+            r.push_str("\r\n");
+
+
+            resp_header = r.as_bytes().to_vec();
+            if !self.content.is_empty() {
+                resp_header.append(&mut self.content);
+            }
         }
 
         resp_header
     }
 
-    fn get_resource(&mut self, p: &str) -> Result<(), ResponseError> {
-        if p == "/" {
-            // Get the index
-            let index = match &CONFIG.root_file {
-                Some(x) => &x,
-                None => {
-                    match &CONFIG.default_root_file {
-                        Some(x) => x,
-                        _ => return Err(ResponseError {
-                            message: "Could not find a default root file!".to_string(),
-                            line: line!(),
-                            column: column!(),
-                        })
-                    }
-                }
-            };
-            let doc_root = &CONFIG.doc_root; 
+    fn get_last_modified(meta: &Metadata) -> Result<String, ResponseError> {
+        let lm = match meta.modified() {
+            Ok(lm) => lm,
+            Err(_) => return Err(ResponseError {
+                message: "Could not get modifed data on file".to_string(),
+                line: line!(),
+                column: column!(),
+            }),
+        };
 
+        let sec_from_epoch = lm.duration_since(SystemTime::UNIX_EPOCH).unwrap();
+        let local_dt = Local.timestamp(sec_from_epoch.as_secs() as i64, 0);
+        let utc_dt: DateTime<Utc> = DateTime::from(local_dt);
+
+        Ok(format!("{}", utc_dt.format("%a, %d %b %Y %H:%M:%S GMT")).to_string())
+    }
+
+    fn get_resource(&mut self, p: &str) -> Result<(), ResponseError> {
+        let doc_root = &CONFIG.doc_root; 
+        let index = match &CONFIG.root_file {
+            Some(x) => &x,
+            None => {
+                match &CONFIG.default_root_file {
+                    Some(x) => x,
+                    _ => return Err(ResponseError {
+                        message: "Could not find a default root file!".to_string(),
+                        line: line!(),
+                        column: column!(),
+                    })
+                }
+            }
+        };
+
+        if p == "/" {
+            // Get the home page, specified by Config.toml -> doc_root/default_doc_root
             let mut file = match File::open(&format!("{}/{}", doc_root, index)) {
                 Ok(file) => file,
                 Err(x) => return Err(ResponseError {
@@ -138,19 +157,41 @@ impl Response {
                 }),
             };
 
+            let meta = match file.metadata() {
+                Ok(meta) => meta,
+                Err(_) => return Err(ResponseError {
+                    message: "Could not get meta data on file".to_string(),
+                    line: line!(),
+                    column: column!(),
+                }),
+            };
+
+            match Response::get_last_modified(&meta) {
+                Ok(time) => {
+                    self.fields.insert(field_to_string(&RequestField::LastModified), time);
+                }
+                Err(_) => (),
+            }
+
             match file.read_to_end(&mut self.content) {
-                Ok(_) => return Ok(()),
+                Ok(size) => {
+                    self.fields.insert(field_to_string(&RequestField::ContentLength), size.to_string());
+                },
                 Err(x) => return Err(ResponseError {
                     message: format!("Could not read file! {}", x),
                     line: line!(),
                     column: column!(),
                 }),
             };
-        } else {
+        } 
+        else {
             // If the resource is not the index, we want to walk the directory
             // tree and find it. 
             let p = format!("{}{}", CONFIG.doc_root, p);
             let path = Path::new(&p);
+
+            println!("Path: {:?}", p);
+
             if path.exists() {
                 let mut file = match File::open(path) {
                     Ok(file) => file,
@@ -160,24 +201,39 @@ impl Response {
                         column: column!(),
                     }),
                 };
+                
+                let meta = match file.metadata() {
+                    Ok(meta) => meta,
+                    Err(_) => return Err(ResponseError {
+                        message: "Could not get meta data on file".to_string(),
+                        line: line!(),
+                        column: column!(),
+                    }),
+                };
+
+                match Response::get_last_modified(&meta) {
+                    Ok(time) => {
+                        self.fields.insert(field_to_string(&RequestField::LastModified), time);
+                    },
+                    Err(_) => (),
+                }
+                
                 match file.read_to_end(&mut self.content) {
-                    Ok(_) => return Ok(()),
+                    Ok(size) => {
+                        self.fields.insert(field_to_string(&RequestField::ContentLength), size.to_string());
+                    },
                     Err(x) => return Err(ResponseError {
                         message: format!("Could not read file! {}", x),
                         line: line!(),
-                        column: column!(),
+                            column: column!(),
                     }),
                 }
             }
         }
 
-        Err(ResponseError {
-            message: "Could not find file!".to_string(),
-            line: line!(),
-            column: column!(),
-        })
+        Ok(())
     }
-    
+
     // Handle a GET request from a client
     fn get_request(&mut self, req: &request::Header) {
         match self.get_resource(req.get_path()) {

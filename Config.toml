@@ -16,10 +16,12 @@ doc_root = 'http'
 
 # Types of images the server will serve. If the image is not
 # on this list, then the server will ignore it.
+# (not implemented)
 image_list = ['ico', 'jpeg', 'jpg', 'gif', 'png']
 
 # Types of files the server will serve. If a file extension
 # is not on this list, the server will ignore it.
+# (not implemented)
 file_list = ['html', 'htm', 'css', 'js', 'txt']
 
 ###################################################

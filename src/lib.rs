@@ -67,7 +67,11 @@ fn new_connection(mut conn: TcpStream) {
             // TODO Who knows if we are going to need size yet??
             let header = Header::new(&buf);
             let mut res = Response::new(&header);
-            header.print();
+            if let Some(x) = CONFIG.print_header_information {
+                if x {
+                    header.print();
+                }
+            }
             let r = res.respond();
             conn.write_all(&r).unwrap();
             conn.flush().unwrap();

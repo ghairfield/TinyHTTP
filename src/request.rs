@@ -152,21 +152,36 @@ impl Header {
         }
     }
 
+    /// Get the validity of the request. If this returns false, then all
+    /// other header fields *might be* invalid.
     pub fn is_valid(&self) -> bool {
         self.valid
     }
 
+    /// Get the path of the request
     pub fn get_path(&self) -> &str {
         &self.path
     }
 
+    /// Get the method of the request
     pub fn get_method(&self) -> protocol::RequestMethod {
         self.method
     }
 
+    /*
+     * I'm not sure what the best way to deal with this is.
+     *
+     * Really this function is a `todo!()` function since right now TinyHTTP
+     * doesn't look at the request header fields. 
+     *
+     * In the future this is planned to be used.
+     *
+     * Get a request header field's value. 
+    #[allow(dead_code)]
     pub fn get_header_field(&self, r: protocol::RequestField) -> Option<&str> {
         self.fields.get(&r).map(|x| &x[..])
     }
+    */
 
     // According to RFC1945 any unrecognized header fields are to
     // be treated as `Entity-Header` fields. Also the spec allows

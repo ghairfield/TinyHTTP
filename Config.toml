@@ -44,3 +44,10 @@ root_file = 'index.html'
 # If a client requests a resource that can not be found, this is
 # the page returned.
 #custom_404 = 'my_custom_404.html'
+
+#######################################
+## Print debug information to stdout ##
+#######################################
+#
+# Print all header information received from a client to stdout
+print_header_information = true

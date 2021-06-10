@@ -8,6 +8,8 @@ lazy_static! {
     pub static ref CONFIG: Config = Config::new();
 }
 
+/// Configure options. These are pulled from Config.toml
+/// in the root directory.
 #[derive(Deserialize, Debug)]
 pub struct Config {
     pub host: String,
@@ -19,8 +21,10 @@ pub struct Config {
     pub root_file: Option<String>,
     pub max_buffer: Option<usize>,
     pub custom_404: Option<String>,
+    pub print_header_information: Option<bool>,
 }
 
+/// Default program options
 impl Default for Config {
     fn default() -> Self {
         Config {
@@ -33,6 +37,7 @@ impl Default for Config {
             root_file: None,
             max_buffer: Some(2048),
             custom_404: None,
+            print_header_information: Some(false),
         }
     }
 }

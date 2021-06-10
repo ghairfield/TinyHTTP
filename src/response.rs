@@ -270,11 +270,11 @@ impl Response {
         self.content.clear();
     }
 
-    fn post_request(&mut self, req: &request::Header) {
+    fn post_request(&mut self, _req: &request::Header) {
         todo!()    
     }
 
-    fn unsupported_request(&mut self, req: &request::Header) {
+    fn unsupported_request(&mut self, _req: &request::Header) {
         todo!()
     }
 }

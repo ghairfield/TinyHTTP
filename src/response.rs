@@ -271,7 +271,7 @@ impl Response {
     }
 
     fn post_request(&mut self, _req: &request::Header) {
-        todo!()    
+        todo!()
     }
 
     fn unsupported_request(&mut self, _req: &request::Header) {

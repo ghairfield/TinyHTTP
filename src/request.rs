@@ -172,11 +172,11 @@ impl Header {
      * I'm not sure what the best way to deal with this is.
      *
      * Really this function is a `todo!()` function since right now TinyHTTP
-     * doesn't look at the request header fields. 
+     * doesn't look at the request header fields.
      *
      * In the future this is planned to be used.
      *
-     * Get a request header field's value. 
+     * Get a request header field's value.
     #[allow(dead_code)]
     pub fn get_header_field(&self, r: protocol::RequestField) -> Option<&str> {
         self.fields.get(&r).map(|x| &x[..])

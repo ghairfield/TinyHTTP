@@ -21,7 +21,7 @@ type Result<T> = std::result::Result<T, TinyHttpError>;
 pub struct TinyHttpError;
 
 /// Main entry point of the server. All configuration is done via `Config.toml`
-/// located in the root directory. 
+/// located in the root directory.
 pub fn tiny_http() -> Result<()> {
     //println!("Config is: {:?}", *CONFIG);
 
@@ -31,7 +31,7 @@ pub fn tiny_http() -> Result<()> {
     }
 }
 
-// Listen for incomming connections from a client. Once a connection is 
+// Listen for incomming connections from a client. Once a connection is
 // established a new thread (per connection).
 fn listen() -> Result<()> {
     let listen = TcpListener::bind(format!("{}:{}", CONFIG.host, CONFIG.port)).unwrap();

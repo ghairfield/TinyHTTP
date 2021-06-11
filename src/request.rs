@@ -199,10 +199,10 @@ impl Header {
                 // We could be here for 2 reasons:
                 //   1: This is a POST request with fields, which we capture.
                 //   2. An invalid `field: parameter` with no parameter (invalid request)
-                let field: Vec<&str> = x[0].split("&").collect();
+                let field: Vec<&str> = x[0].split('&').collect();
                 if !field.is_empty() {
                     for i in &field {
-                        let j: Vec<&str> = i.split("=").collect();
+                        let j: Vec<&str> = i.split('=').collect();
                         if j.len() == 2 {
                             // POST field!
                             self.post_fields.insert(j[0].to_string(), j[1].to_string());
